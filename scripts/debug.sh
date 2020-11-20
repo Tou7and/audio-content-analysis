@@ -1,4 +1,5 @@
 #!/bin/sh
-
-NAME="mca-mk1"
-docker exec -it $NAME /bin/bash
+set -eo pipefail
+source ./scripts/common.sh
+echo "Entering ${CONTAINER_NAME} ..."
+docker exec -it $CONTAINER_NAME /bin/bash

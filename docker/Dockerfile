@@ -186,7 +186,6 @@ WORKDIR /opt
 RUN pip3 install -r requirements.txt
 
 COPY src /opt/src
-COPY test/test_analysis.py /opt/src/
 RUN mkdir /opt/src/data
 COPY test/Eredin_1min.wav /opt/src/data/
 

@@ -8,6 +8,7 @@ or get the analyis report. (currently it's just an ASR transcription, planning t
 ## TODO
 - Use logger for tracing stauts
 - Add test scripts
+- Add scene classification: make hashtags?
 - Add sentient analysis
 - Add Mandarin ASR Model
 - Add redirection for each functions in main page. 

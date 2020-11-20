@@ -1,5 +1,7 @@
 #!/bin/sh
-VER="v1"
+source ./scripts/common.sh
 
-docker build -f docker/Dockerfile -t tou7and/video-content-analysis:$VER .
+echo "Building image ${IMAGE_NAME} ${VER} ..."
+docker build -f docker/Dockerfile -t "${IMAGE_NAME}:${VER}" .
+
 

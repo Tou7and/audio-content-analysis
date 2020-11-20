@@ -8,7 +8,22 @@
 <body style="margin-top:12%;">
   <form method="POST">
     <label for="url">Youtube URL:</label>
-    <input type="text" id="url" name="url"><br><br>
+    <input type="text" id="url" name="url" size="60"><br><br>
+    <label for="filename">Desired Filename:</label>
+    <input type="text" id="filename" name="filename" size="20"><br><br>
+
+    <select id="format", name="format">
+	  <option value="mp4">MP4</option>
+	  <option value="mp3">MP3</option>
+	  <option value="wav">WAV</option>
+    </select> 
+    
+    <label for="start">start(sec):</label>
+    <input type="text" id="start" name="start">
+
+    <label for="end">stop(sec):</label>
+    <input type="text" id="stop" name="stop"><br><br>
+
     <input type="submit" value="Submit">
   </form>
 </body>

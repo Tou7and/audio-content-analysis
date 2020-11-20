@@ -1,4 +1,4 @@
-""" URL --> MP4 --> WAV """
+""" Given Video URL, run youtube-dl to retrieve its content """
 import os
 import sys
 import youtube_dl
@@ -18,6 +18,19 @@ WAV_OPTS = {
     }]
 }
 
+MP3_OPTS = {
+    'verbose': 1,
+    'format': 'bestaudio/best',
+    'outtmpl': '%(title)s-%(id)s.%(ext)s',
+    'noplaylist': True,
+    'continue_dl': True,
+    'postprocessors': [{
+        'key': 'FFmpegExtractAudio',
+        'preferredcodec': 'mp3',
+        'preferredquality': '192',
+    }]
+}
+
 MP4_OPTS = {
     'verbose': 1,
     'format': 'bestvideo+bestaudio/best',
@@ -31,9 +44,9 @@ MP4_OPTS = {
     ]
 }
 
-class YDLProcess:
-    """ A Youtue download process """
-    def __init__(self, url, storage_dir, session_id, dst_format="mp4"):
+class YoutubeDownloader:
+    """ A Youtue downloader """
+    def __init__(self, url, storage_dir=TMP_DIR, session_id="default", dst_format="mp4", dst_filename="default"):
         self.format = dst_format
         self.url = url
         process_id = session_id
@@ -42,9 +55,18 @@ class YDLProcess:
 
         if dst_format == "mp4":
             self.opts = MP4_OPTS
+        elif dst_format == "mp3":
+            self.opts = MP3_OPTS
         else:
             self.opts = WAV_OPTS
-        self.opts['outtmpl'] = self.data_dir+'/%(title)s-%(id)s.%(ext)s'
+            self.format = "wav"
+
+        if dst_filename == "default":
+            self.opts['outtmpl'] = self.data_dir+'/%(title)s-%(id)s.%(ext)s'
+            self.filepath = "default"
+        else:
+            self.opts['outtmpl'] = self.data_dir+'/'+dst_filename+'.%(ext)s'
+            self.filepath = self.data_dir+'/'+dst_filename+'.'+self.format
 
         self.results = {"status": -1, "video": "none", "audio": "none", "media": "none"}
 
@@ -66,29 +88,17 @@ class YDLProcess:
         with youtube_dl.YoutubeDL(self.opts) as ydl:
             ydl.cache.remove()
             info_dict = ydl.extract_info(self.url, download=True)
-            file_name = "{}-{}.{}".format(info_dict["title"], info_dict["id"], self.format)
+            if self.filepath == "default":
+                file_name = "{}-{}.{}".format(info_dict["title"], info_dict["id"], self.format)
+                self.filepath = os.path.join(self.data_dir, file_name)
 
-        media_path = os.path.join(self.data_dir, file_name)
-        if os.path.exists(media_path):
-            self.results["media"] = media_path
-            audio_path = decode_as_wavfile(media_path)
+        if os.path.exists(self.filepath):
+            self.results["media"] = self.filepath
+            audio_path = decode_as_wavfile(self.filepath)
             self.results["audio"] = audio_path
             self.results["status"] = 0
         else:
             self.results["status"] = 1
 
-def run_ydl_process(url, dst_dir=TMP_DIR, session_id="default", dst_format="mp4"):
-    """ Run a youtube download process.
-    Args:
-        url: str, a youtube URL
-        dst_dir: str, the dir to store the media files.
-
-    Returns:
-        results: dict, with status(int), video(str), audio(str)
-    """
-    ydl_process = YDLProcess(url, dst_dir, session_id, dst_format)
-    ydl_process.run()
-    return ydl_process.results
-
 if __name__ == "__main__":
-    run_ydl_process(sys.argv[1], dst_dir=sys.argv[2])
+    ydl_p = YoutubeDownloader(sys.argv[1], dst_dir=sys.argv[2])
