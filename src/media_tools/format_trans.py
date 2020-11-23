@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-""" Media format transform with FFmepg 
-"""
+""" Media format transform with FFmepg """
 import sys
 import os
 import warnings
@@ -54,12 +53,24 @@ def probe(in_filepath, verbose=0):
             print(key, val)
     return format_info
 
-def segment(in_filepath, out_filepath, start, end):
+def segment(in_filepath, out_filepath=None, start=0.0, end=0.0):
     """ Make video/audio clip by trimming original file. """
-    start = float(start)
-    end = float(end)
-    info = probe(in_filepath)
-    src_duration = float(info["duration"])
+    if out_filepath == None:
+        base, ext = os.path.splitext(in_filepath)
+        out_filepath = base + "_segment" + ext
+
+    try:
+        start = float(start)
+        end = float(end)
+    except Exception as error:
+        raise TypeError("start and end must be int or float, or string that can be convert to float.")
+
+    try:
+        info = probe(in_filepath)
+        src_duration = float(info["duration"])
+    except Exception as error:
+        raise RuntimeError("Fail to get file information with FFmpeg.")
+
     if end > src_duration:
         warnings.warn("format_trans.segment: end timestamp not in duration range, using duration instead.", Warning)
         end = src_duration
@@ -76,7 +87,7 @@ def segment(in_filepath, out_filepath, start, end):
             .run(capture_stdout=True, capture_stderr=True)
         )
     except Exception as error:
-        raise RuntimeError(error)
+        raise RuntimeError("{}".format(error))
     return out_filepath
 
 if __name__ == "__main__":
