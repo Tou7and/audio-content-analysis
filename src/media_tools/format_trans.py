@@ -92,9 +92,9 @@ def segment(in_filepath, out_filepath=None, start=0.0, end=0.0):
 
 if __name__ == "__main__":
     src = sys.argv[1]
-    dst = sys.argv[2]
-    start = sys.argv[3]
-    end = sys.argv[4]
-    # out = decode_as_wavfile(video)
+    # dst = sys.argv[2]
+    # start = sys.argv[3]
+    # end = sys.argv[4]
+    out = decode_as_wavfile(src)
     # out = probe(video, verbose=1)
-    segment(src, dst, start, end)
+    # segment(src, dst, start, end)

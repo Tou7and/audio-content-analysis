@@ -146,19 +146,23 @@ def main(args):
         print(' Writing %s' % (path,))
         write_wave(path, segment, sample_rate)
 
-def wav2segments(wavfile, mode=3, outputdir=None):
+def wav2segments(wavfile, mode=3, outputdir=None, max_duration_ms=20000):
     """ Convert an wavfile to voiced segments
 
     Returns:
         list_timestamp: list of dict, {"id": i, "start": start, "stop": stop}
         list_wavpath: list of strings
     """
+    frame_duration_ms = 30
+    padding_duration_ms = 300
     audio, sample_rate = read_wave(wavfile)
     vad = webrtcvad.Vad(mode)
-    frames = frame_generator(30, audio, sample_rate)
+    frames = frame_generator(frame_duration_ms, audio, sample_rate)
     frames = list(frames)
-    segments = vad_collector(sample_rate, 30, 300, vad, frames)
-    
+    segments = vad_collector(sample_rate, frame_duration_ms, padding_duration_ms, vad, frames)
+    max_number_frame = int(max_duration_ms/frame_duration_ms)
+    segments = split_too_long(segments, max_number_frame)
+
     list_timestamps = []
     list_wavpath = []
     for i, voiced_frames in enumerate(segments):
@@ -175,9 +179,33 @@ def wav2segments(wavfile, mode=3, outputdir=None):
             write_wave(segment_path, segment, sample_rate)
     return list_timestamps, list_wavpath
 
+def split_too_long(segments, max_number_frame):
+    """ Limit the number of frames of each segment.
+    Args:
+        segments: list of segment, and each segment is a list of frame
+        max_number_frame: int
+    Returns:
+        new_segments: list of segment
+    """
+    new_segments = []
+    for voiced_frames in segments:
+        new_voiced_frames = []
+        counter = 0
+        for frame in voiced_frames:
+            if counter == max_number_frame:
+                new_segments.append(new_voiced_frames)
+                new_voiced_frames = []
+                counter = 0
+            new_voiced_frames.append(frame)
+            counter+=1
+        if counter > 0:
+            new_segments.append(new_voiced_frames)
+    return new_segments
+
 if __name__ == "__main__":
     wavpath = sys.argv[1]
-
-    timestamps, _ = wav2segments(wavpath, outputdir="/Users/mac/media/example")
+    dst_out = sys.argv[2]
+    os.makedirs(dst_out)
+    timestamps, _ = wav2segments(wavpath, outputdir=dst_out)
     for timestamp in timestamps:
         print(timestamp)
