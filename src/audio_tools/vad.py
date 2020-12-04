@@ -168,15 +168,16 @@ def wav2segments(wavfile, mode=3, outputdir=None, max_duration_ms=20000):
     for i, voiced_frames in enumerate(segments):
         start = voiced_frames[0].timestamp
         stop = voiced_frames[-1].timestamp + voiced_frames[-1].duration
-        timestamp = {"id": i, "start": start, "stop": stop}
+        timestamp = {"id": i, "start": round(start, 4), "stop": round(stop, 4)}
         # timestamp = {"id": i, "start": segment.timestamp, "stop": segment.duration}
         list_timestamps.append(timestamp)
 
-        if os.path.isdir(outputdir):
-            segment = b''.join([f.bytes for f in voiced_frames])
-            segment_path = os.path.join(outputdir, "chunk-{}.wav".format(str(i).zfill(4)))
-            list_wavpath.append(segment_path)
-            write_wave(segment_path, segment, sample_rate)
+        if outputdir is not None:
+            if os.path.isdir(outputdir):
+                segment = b''.join([f.bytes for f in voiced_frames])
+                segment_path = os.path.join(outputdir, "chunk-{}.wav".format(str(i).zfill(4)))
+                list_wavpath.append(segment_path)
+                write_wave(segment_path, segment, sample_rate)
     return list_timestamps, list_wavpath
 
 def split_too_long(segments, max_number_frame):

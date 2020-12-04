@@ -101,4 +101,4 @@ class YoutubeDownloader:
             self.results["status"] = 1
 
 if __name__ == "__main__":
-    ydl_p = YoutubeDownloader(sys.argv[1], dst_dir=sys.argv[2])
+    ydl_p = YoutubeDownloader(sys.argv[1], storage_dir=sys.argv[2])

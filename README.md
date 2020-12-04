@@ -1,9 +1,8 @@
 # Audio Content Analysis
-A web application made by Flask.
-
-Analyse audio content of a youtube video.
+A Flask application for analysing audio content on Youtube.
 
 ## TODO
+- Replace current VAD with a SED (sound event detector)
 - Use logger for tracing stauts
 - Add test scripts
 - Scene classification: make hashtags?
