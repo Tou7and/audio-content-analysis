@@ -1,12 +1,14 @@
 """ Analyse the audio content of the media and write results to an HTML file. """
+import logging
 import os
 import pandas as pd
 from audio_tools.vad import wav2segments
 from audio_tools.asr import wavfiles2text
 from audio_tools.sed import SoundEventDetectionX
 from media_tools.format_trans import segment
-
 from common import TMP_DIR, SED_MODEL
+
+logger = logging.getLogger(__name__)
 
 def postprocess_asrtext(text):
     """ Post-process on ASR text for better visuals
@@ -36,6 +38,7 @@ def run_analysis(wav_path, html_path, segment_method="sed"):
             3 = Fail to make HTML
     """
     try:
+        logger.info("---------- Doing SED --------------")
         if segment_method == "sed":
             sed = SoundEventDetectionX(checkpoint_path=SED_MODEL, device='cpu')
             event_timestamps = sed.detect_sound_event(wav_path)
@@ -47,14 +50,14 @@ def run_analysis(wav_path, html_path, segment_method="sed"):
                     list_wavpath.append(segment_path)
                     timestamp["wavfile"] = segment_path
         else:
-            # print("Doing VAD...")
+            logger.info("---------- Doing VAD --------------")
             list_timestamp, list_wavpath = wav2segments(wav_path, outputdir=TMP_DIR)
             # print("Number of segments: {}".format(len(list_wavpath)))
     except Exception as error:
         return 1, "Fail when doing VAD/SED: {}".format(error)
 
     try:
-        # print("Doing ASR...")
+        logger.info("---------- Doing ASR --------------")
         status, text_dict = wavfiles2text(list_wavpath)
     except Exception as error:
         return 2, "Fail when doing ASR: {}".format(error)

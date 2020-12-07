@@ -1,10 +1,12 @@
 """ A Flask Web Application For Converting and Analysing Media Content """
 import os
+import sys
 import logging
-from logging import FileHandler
+from logging import FileHandler, StreamHandler
 from logging.handlers import SMTPHandler
 from uuid import uuid4
 from flask import Flask, render_template, request, redirect, flash, url_for, send_file, session
+from flask.logging import default_handler
 from download_youtube import YoutubeDownloader
 from media_tools.format_trans import segment
 from run_analysis import run_analysis
@@ -13,22 +15,27 @@ from common import TMP_DIR, TEMPLATE_DIR
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'psychopass'
 
-mail_handler = SMTPHandler(
-    mailhost='0.0.0.0',
-    fromaddr='audio-content-analysis@example.com',
-    toaddrs=['houj0411@gmail.com'],
-    subject='Application Error'
-)
-mail_handler.setLevel(logging.ERROR)
-mail_handler.setFormatter(logging.Formatter(
-    '[%(asctime)s] %(levelname)s in %(module)s: %(message)s'
-))
-file_handler = FileHandler('log.txt')
-file_handler.setLevel(logging.DEBUG)
-
-if not app.debug:
-    app.logger.addHandler(mail_handler)
-app.logger.addHandler(file_handler)
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logger = logging.getLogger(__name__)
+# mail_handler = SMTPHandler(
+#     mailhost='0.0.0.0',
+#     fromaddr='audio-content-analysis@example.com',
+#     toaddrs=['houj0411@gmail.com'],
+#     subject='Application Error'
+# )
+# mail_handler.setLevel(logging.ERROR)
+# mail_handler.setFormatter(logging.Formatter(
+#     '[%(asctime)s] %(levelname)s in %(module)s: %(message)s'
+# ))
+# file_handler = FileHandler('log.txt')
+# file_handler.setLevel(logging.DEBUG)
+# stream_handler = StreamHandler()
+# 
+# app.logger.removeHandler(default_handler)
+# if not app.debug:
+#     app.logger.addHandler(mail_handler)
+# app.logger.addHandler(file_handler)
+# app.logger.addHandler(stream_handler)
 
 @app.route("/")
 def index():
@@ -56,9 +63,9 @@ def return_file():
     yt_dl.run()
     results = yt_dl.results
 
-    app.logger.info("----- YDL Returns ------")
+    logger.info("------------- Finish downloading Video -----------------------")
     for key, val in results.items():
-        app.logger.info("{}:{}".format(key, val))
+        logger.info("{}:{}".format(key, val))
 
     if results["status"] != 0:
         return "<h1> Error: Fail to download vidoe using Youtube-DL</h1>"
@@ -66,12 +73,17 @@ def return_file():
     location = results["media"]
 
     if session["purpose"] == "analyse":
-        kata = session["kata"]
-        results_html = os.path.join(TEMPLATE_DIR, session["id"]+".html")
-        status_of_analysis, error_description = run_analysis(results["audio"], results_html)
-        if status_of_analysis != 0:
-            return "<h1> Fail to analyse audio content: {}</h1>".format(error_description)
-        return render_template(session["id"]+".html")
+        logger.info("---------------- Start analysing Video --------------------")
+        try:
+            kata = session["kata"]
+            results_html = os.path.join(TEMPLATE_DIR, session["id"]+".html")
+            status_of_analysis, error_description = run_analysis(results["audio"], results_html)
+            if status_of_analysis != 0:
+                return "<h1> Fail to analyse audio content: {}</h1>".format(error_description)
+            return render_template(session["id"]+".html")
+        except Exception as error:
+            return "<h1> Error when analysing content: {} </h1>".format(error)
+
     elif session["start"] != "" or session["stop"] !="":
         try:
             segment_file = segment(location, start=session["start"], end=session["stop"])
@@ -93,12 +105,13 @@ def download_youtube():
         session["filename"] = request.form.get('filename')
         session["start"] = request.form.get('start')
         session["stop"] = request.form.get('stop')
-        app.logger.info("------- Receive Session Data From User: -------")
-        app.logger.info("URL : {}".format(session["url"]))
-        app.logger.info("FORMAT : {}".format(session["format"]))
-        app.logger.info("FILENAME : {}".format(session["filename"]))
-        app.logger.info("START : {}".format(session["start"]))
-        app.logger.info("STOP : {}".format(session["stop"]))
+        logger.info("------------------------------------------------")
+        logger.info("------- Receive Session Data From User: -------")
+        logger.info("URL : {}".format(session["url"]))
+        logger.info("FORMAT : {}".format(session["format"]))
+        logger.info("FILENAME : {}".format(session["filename"]))
+        logger.info("START : {}".format(session["start"]))
+        logger.info("STOP : {}".format(session["stop"]))
         session["purpose"] = "download"
         session["id"] = str(uuid4())
         return redirect(url_for("return_file"))
@@ -111,9 +124,10 @@ def analyse_youtube():
     if request.method == "POST":
         session["url"] = request.form.get('url')
         session["kata"] = request.form.get('kata')
-        app.logger.info("------- Receive Session Data From User: -------")
-        app.logger.info("URL : {}".format(session["url"]))
-        app.logger.info("KATA : {}".format(session["kata"]))
+        logger.info("------------------------------------------------")
+        logger.info("------- Receive Session Data From User: -------")
+        logger.info("URL : {}".format(session["url"]))
+        logger.info("KATA : {}".format(session["kata"]))
         session["purpose"] = "analyse"
         session["id"] = str(uuid4())
         session["format"] = "wav"
