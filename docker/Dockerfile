@@ -187,7 +187,15 @@ RUN pip3 install -r requirements.txt
 
 COPY src /opt/src
 RUN mkdir /opt/src/data
-COPY test/Eredin_1min.wav /opt/src/data/
+
+RUN mkdir /root/panns_data
+COPY data/Cnn14_DecisionLevelMax.pth /root/panns_data/
+COPY data/class_labels_indices.csv /root/panns_data/
+
+COPY tests /opt/tests
+# WORKDIR /opt/
+# RUN python3 tests/test_analysis.py
+# RUN cat /tests/*.html
 
 WORKDIR /opt/src
 

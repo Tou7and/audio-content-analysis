@@ -61,6 +61,14 @@ def wav2text(wavfile):
     return status, text
 
 def wavfiles2text(list_wavfiles):
+    """ Transcribe the given list of wavfiles.
+    Args:
+        list_wavfiles (list): list of WAV path.
+
+    Returns:
+        status (int): 0 if success.
+        text_dict (dict): key, val = wav_id(str), ASR content(str)
+    """
     text_dict = {}
     create_corpus_dir(CORPUS_DIR, list_wavfiles)
     results = subprocess.run(["./recognize-wavfiles.sh"],
@@ -79,5 +87,4 @@ def wavfiles2text(list_wavfiles):
             key = asr_content[0]
             if key in text_dict:
                 text_dict[key] = " ".join(asr_content[1:])
-
     return status, text_dict

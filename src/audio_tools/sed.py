@@ -14,9 +14,10 @@ class SoundEventDetectionX(SoundEventDetection):
           threshold (float): threshold to determine whether the events occur.
 
         Returns:
-          time_stamps (list): a list of sound event time-stamps ({'event', 'start', 'stop'})
+          time_stamps (list): a list of sound event time-stamps ({'event', 'id', 'start', 'stop'})
         """
         (audio, _) = librosa.core.load(audio_path, sr=32000, mono=True)
+        duration = audio.shape[0]/32000
         audio = audio[None, :]  # (batch_size, segment_samples)
 
         framewise_output = self.inference(audio) # (batch_size, time_steps, classes_num)
@@ -43,18 +44,42 @@ class SoundEventDetectionX(SoundEventDetection):
                     if activate == False:
                         capture_event = False
                         time_stamps.append({"label": event_label, "start": round(0.01*start_idx, 4), "stop": round(0.01*time_idx, 4)})
+                    elif time_idx == len(activations)-1:
+                        time_stamps.append({"label": event_label, "start": round(0.01*start_idx, 4), "stop": round(0.01*time_idx, 4)})
                 else:
                     if activate == True:
                         capture_event = True
                         start_idx = time_idx
-        # df_timestamp = pd.DataFrame(time_stamps)
-        # df_timestamp.to_csv("results/timestamps.csv")
+
+        self.sort_timestamps(time_stamps, 0, len(time_stamps)-1)
+
+        for ind, time_stamp in enumerate(time_stamps):
+            time_stamp["id"] = ind
+            if time_stamp["stop"] < duration:
+                # Avoid cutting word tail
+                time_stamp["stop"] += 0.5
         return time_stamps
 
-    def get_speech_segments(self, audio_path, outputdir=None):
-        event_dict = self.detect_sound_event(audio_path)
-        # TODO: get speech time stamps and cut them to outputdir
-        return list_timestamp, list_wavpath
+    def sort_timestamps(self, time_stamps, head_index, tail_index):
+        """ Sort time-stamps based on start time. 
+        
+        Use quick-sort and pivot is always the last.
+        """
+        if tail_index >= len(time_stamps):
+            raise ValueError("tail_index must less or equal to length of timestamps-1.")
+
+        if tail_index > head_index:
+            pivot_index = tail_index
+            counter = 0
+            for index in range(head_index, tail_index):
+                if time_stamps[index-counter]["start"] > time_stamps[pivot_index]["start"]:
+                    bigger = time_stamps.pop(index-counter)
+                    time_stamps.insert(tail_index, bigger)
+                    pivot_index -= 1
+                    counter += 1
+            self.sort_timestamps(time_stamps, head_index, pivot_index-1)
+            self.sort_timestamps(time_stamps, pivot_index+1, tail_index)
+        return time_stamps
 
 if __name__ == '__main__':
     model_path = "/Users/mac/panns_data/Cnn14_DecisionLevelMax.pth"

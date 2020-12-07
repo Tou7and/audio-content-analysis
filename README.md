@@ -2,12 +2,15 @@
 A Flask application for analysing audio content on Youtube.
 
 ## TODO
-- Replace current VAD with a SED (sound event detector)
-- Use logger for tracing stauts
-- Add test scripts
+- Trace computation and time cost
+- ASR scripts multiprocessing
+- logger for tracing status and errors
 - Scene classification: make hashtags?
 - Sentient analysis?
 - Mandarin ASR
+
+# DONE
+- Replace current VAD with a SED (sound event detector)
 
 ## Tree
 ```

@@ -27,18 +27,19 @@ def probe(in_filepath, verbose=0):
     """ Get media information of input file. 
 
     Returns:
-        format_info: dict, with the following keys --
-            filename /Users/mac/Downloads/HiroyukiSawano–ashes.mp3
-            nb_streams 1
-            nb_programs 0
-            format_name mp3
-            format_long_name MP2/3 (MPEG audio layer 2/3)
-            start_time 0.023021
-            duration 545.040000
-            size 13081581
-            bit_rate 192009
-            probe_score 51
-            tags {'encoder': 'Lavf57.56.101'}
+        format_info (dict): 
+            Ex:
+                filename /Users/mac/Downloads/HiroyukiSawano–ashes.mp3
+                nb_streams 1
+                nb_programs 0
+                format_name mp3
+                format_long_name MP2/3 (MPEG audio layer 2/3)
+                start_time 0.023021
+                duration 545.040000
+                size 13081581
+                bit_rate 192009
+                probe_score 51
+                tags {'encoder': 'Lavf57.56.101'}
     """
     try:
         infos = ffmpeg.probe(in_filepath)
