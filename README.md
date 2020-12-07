@@ -6,6 +6,9 @@ A Flask application for analysing audio content on Youtube.
 2. ./scripts/run.sh
 3. The service should be running on localhost:5566 by default
 
+# Demo on AWS
+<http://ec2-100-26-214-57.compute-1.amazonaws.com:8888>
+
 ## Tree
 ```
 ├── docker  :  Dockefiles
