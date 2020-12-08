@@ -1,11 +1,16 @@
 TODO:
 - A database for recording user requests
-- Trace computation and time cost
+- Trace computation and time cost (also record in DB?)
 - ASR scripts multiprocessing
 - logger for tracing status and errors
 - Scene classification: make hashtags?
 - Sentient analysis?
 - Mandarin ASR
+
+Issues:
+- The system will go down when analysing audio if the duration is too long (about 3G for 10 min video)
+  - Increasing the mem that the container allow to use is one solution
+  - Guess tracking the memory usage is the most important task now.
 
 DONE:
 - Replace current VAD with a SED (sound event detector)
