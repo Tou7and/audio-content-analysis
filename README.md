@@ -1,12 +1,12 @@
 # Audio Content Analysis
 A Flask application for analysing audio content on Youtube.
 
-# Setup
+## Setup
 1. Pull image from DockerHub: docker pull tou7and/audio-content-analysis
 2. ./scripts/run.sh
 3. The service should be running on localhost:5566 by default
 
-# Files
+## Files
 ```
 ├── docker  :  Dockefiles
 ├── scripts :  Scripts for building and deploying service
