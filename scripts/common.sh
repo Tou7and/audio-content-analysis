@@ -1,5 +1,5 @@
 IMAGE_NAME="tou7and/audio-content-analysis"
-VER="v1.4"
+VER="v1.5"
 CONTAINER_NAME="aca"
 PORT=127.0.0.1:5566
 LOCAL_IMAGE="${IMAGE_NAME}:${VER}"

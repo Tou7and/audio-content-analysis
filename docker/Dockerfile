@@ -193,9 +193,6 @@ COPY data/Cnn14_DecisionLevelMax.pth /root/panns_data/
 COPY data/class_labels_indices.csv /root/panns_data/
 
 COPY tests /opt/tests
-# WORKDIR /opt/
-# RUN python3 tests/test_analysis.py
-# RUN cat /tests/*.html
 
 WORKDIR /opt/src
 

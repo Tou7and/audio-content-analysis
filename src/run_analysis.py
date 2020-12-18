@@ -86,6 +86,3 @@ def run_analysis(wav_path, html_path, segment_method="sed"):
         return 3, "Fail when generating table: {}".format(error)
 
     return 0, "Success"
-
-if __name__ == "__main__":
-    run_analysis("/opt/src/data/Eredin_1min.wav", "/opt/src/data/Eredin_1min.html")
