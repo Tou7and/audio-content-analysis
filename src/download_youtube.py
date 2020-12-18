@@ -73,7 +73,8 @@ class YoutubeDownloader:
     def make_datadir(self):
         """ Make directory to store media data """
         try:
-            os.makedirs(self.data_dir)
+            if os.path.isdir(self.data_dir) == False:
+                os.makedirs(self.data_dir)
         except Exception as error:
             raise RuntimeError(error)
 
