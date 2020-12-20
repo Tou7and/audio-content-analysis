@@ -1,0 +1,23 @@
+# v1.6: (offline decoding)
+- url=https://www.youtube.com/watch?v=Rk2qzbZt9p0
+- nj=1
+The time cost of run is 8.067809820175171.
+The time cost of detect_sound_event is 7.643919229507446.
+The time cost of wavfiles2text is 21.753716468811035.
+
+v1.7: (online decoding)
+- url=https://www.youtube.com/watch?v=Rk2qzbZt9p0
+- nj=4
+The time cost of run is 11.548445463180542.
+The time cost of detect_sound_event is 7.977866172790527.
+The time cost of wavfiles2text is 27.97334051132202.
+
+- nj=2
+The time cost of run is 11.096014738082886.
+The time cost of detect_sound_event is 8.318380117416382.
+The time cost of wavfiles2text is 27.311290740966797.
+
+- nj=1
+The time cost of run is 9.890301942825317.
+The time cost of detect_sound_event is 7.742445707321167.
+The time cost of wavfiles2text is 30.378278017044067.

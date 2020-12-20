@@ -3,6 +3,7 @@ import os
 import sys
 import subprocess
 from shutil import rmtree
+from glob import glob
 from common import ASR_WORK_DIR, CORPUS_DIR
 from time_cost import time_cost
 
@@ -62,8 +63,22 @@ def wav2text(wavfile):
         text = "[{}]".format(results.stderr)
     return status, text
 
+def collect_logs():
+    """ Collect logs that contain ASR results from decode.x.log.
+
+    Returns:
+        lines (list): list of string.
+    """
+    log_files = glob(os.path.join(ASR_WORK_DIR, "exp/api.ai-model/decode/log/decode.*.log"))
+    logs = []
+    for log_file in log_files:
+        with open(log_file, "r") as reader:
+            lines = reader.readlines()
+        logs += lines
+    return logs
+
 @time_cost
-def wavfiles2text(list_wavfiles):
+def wavfiles2text(list_wavfiles, n_job=2):
     """ Transcribe the given list of wavfiles.
     Args:
         list_wavfiles (list): list of WAV path.
@@ -72,9 +87,12 @@ def wavfiles2text(list_wavfiles):
         status (int): 0 if success.
         text_dict (dict): key, val = wav_id(str), ASR content(str)
     """
+    if len(list_wavfiles) < 4:
+        n_job = 1
+
     text_dict = {}
     create_corpus_dir(CORPUS_DIR, list_wavfiles)
-    results = subprocess.run(["./recognize-wavfiles.sh"],
+    results = subprocess.run(["./recognize-wavfiles-online.sh", str(n_job)],
             stdout=subprocess.PIPE, cwd=ASR_WORK_DIR)
     status = results.returncode
 
@@ -83,8 +101,7 @@ def wavfiles2text(list_wavfiles):
         text_dict[wav_id] = ""
 
     if status == 0:
-        with open(os.path.join(ASR_WORK_DIR, "exp/api.ai-model/log/decode.1.log"), "r") as reader:
-            lines = reader.readlines()
+        lines = collect_logs()
         for line in lines:
             asr_content = line.split(" ")
             key = asr_content[0]

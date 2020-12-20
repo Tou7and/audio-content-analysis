@@ -14,6 +14,7 @@
 . ./path.sh
 MODEL_DIR="exp/api.ai-model"
 DATA_DIR="data/test-corpus"
+NJ=$1
 
 for file in final.mdl HCLG.fst words.txt frame_subsampling_factor; do
   if [ ! -f $MODEL_DIR/$file ]; then
@@ -28,7 +29,7 @@ done;
 
 echo "[debug] Computing mfcc and cmvn (cmvn is not really used)"
 
- steps/make_mfcc.sh --nj 1 --mfcc-config $MODEL_DIR/mfcc.conf \
+steps/make_mfcc.sh --nj $NJ --mfcc-config $MODEL_DIR/mfcc.conf \
       --cmd "run.pl" $DATA_DIR exp/make_mfcc exp/mfcc || { echo "Unable to calculate mfcc, ensure 16kHz, 16 bit little-endian wav format or see log"; exit 1; };
     steps/compute_cmvn_stats.sh $DATA_DIR exp/make_mfcc/ exp/mfcc || exit 1;
 
@@ -44,9 +45,10 @@ frame_subsampling_factor=$(cat $MODEL_DIR/frame_subsampling_factor)
 #  "ark,s,cs:apply-cmvn --norm-means=false --norm-vars=false --utt2spk=ark:$DATA_DIR/utt2spk scp:$DATA_DIR/cmvn.scp scp:$DATA_DIR/feats.scp ark:- |" \
 #  "ark:|lattice-scale --acoustic-scale=10.0 ark:- ark:-  >exp/lat.1"
 
-nj=1
+feats="ark,s,cs:apply-cmvn --norm-means=false --norm-vars=false --utt2spk=ark:$DATA_DIR/utt2spk scp:$DATA_DIR/cmvn.scp scp:$DATA_DIR/feats.scp ark:- |"
+lat_wspecifier="ark:|lattice-scale --acoustic-scale=10.0 ark:- ark:-  >exp/lat.JOB"
 
-run.pl JOB=1:$nj $MODEL_DIR/log/decode.JOB.log \
+run.pl JOB=1:$NJ $MODEL_DIR/log/decode.JOB.log \
     nnet3-latgen-faster --frame-subsampling-factor=$frame_subsampling_factor \
      --frames-per-chunk=50 \
      --extra-left-context=0 \
@@ -55,8 +57,6 @@ run.pl JOB=1:$nj $MODEL_DIR/log/decode.JOB.log \
      --extra-right-context-final=-1 \
      --minimize=false --max-active=7000 --min-active=200 --beam=15.0 \
      --lattice-beam=8.0 --acoustic-scale=1.0 --allow-partial=true \
-     --word-symbol-table=$MODEL_DIR/words.txt "$MODEL_DIR/final.mdl" $MODEL_DIR/HCLG.fst \
-     "ark,s,cs:apply-cmvn --norm-means=false --norm-vars=false --utt2spk=ark:$DATA_DIR/utt2spk scp:$DATA_DIR/cmvn.scp scp:$DATA_DIR/feats.scp ark:- |" \
-     "ark:|lattice-scale --acoustic-scale=10.0 ark:- ark:-  >exp/lat.1"
-
+     --word-symbol-table=$MODEL_DIR/words.txt \
+     "$MODEL_DIR/final.mdl" $MODEL_DIR/HCLG.fst "$feats" "$lat_wspecifier" || exit 1;
 
