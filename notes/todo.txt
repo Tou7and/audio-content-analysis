@@ -1,7 +1,7 @@
 TODO:
+- Keep improving speed
 - A database for recording user requests
 - Trace computation and time cost (also record in DB?)
-- ASR scripts multiprocessing
 - logger for tracing status and errors
 - Scene classification: make hashtags?
 - Sentient analysis?
@@ -14,3 +14,4 @@ Issues:
 
 DONE:
 - Replace current VAD with a SED (sound event detector)
+- ASR scripts multiprocessing

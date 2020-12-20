@@ -78,7 +78,7 @@ def collect_logs():
     return logs
 
 @time_cost
-def wavfiles2text(list_wavfiles, n_job=2):
+def wavfiles2text(list_wavfiles, n_job=2, beam=10.0):
     """ Transcribe the given list of wavfiles.
     Args:
         list_wavfiles (list): list of WAV path.
@@ -92,7 +92,7 @@ def wavfiles2text(list_wavfiles, n_job=2):
 
     text_dict = {}
     create_corpus_dir(CORPUS_DIR, list_wavfiles)
-    results = subprocess.run(["./recognize-wavfiles-online.sh", str(n_job)],
+    results = subprocess.run(["./recognize-wavfiles-online.sh", str(n_job), str(beam)],
             stdout=subprocess.PIPE, cwd=ASR_WORK_DIR)
     status = results.returncode
 

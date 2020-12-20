@@ -5,7 +5,7 @@ The time cost of run is 8.067809820175171.
 The time cost of detect_sound_event is 7.643919229507446.
 The time cost of wavfiles2text is 21.753716468811035.
 
-v1.7: (online decoding)
+# v1.7: (online decoding)
 - url=https://www.youtube.com/watch?v=Rk2qzbZt9p0
 - nj=4
 The time cost of run is 11.548445463180542.
@@ -21,3 +21,19 @@ The time cost of wavfiles2text is 27.311290740966797.
 The time cost of run is 9.890301942825317.
 The time cost of detect_sound_event is 7.742445707321167.
 The time cost of wavfiles2text is 30.378278017044067.
+
+- beam=10.0
+- nj=1
+The time cost of run is 8.170841217041016.
+The time cost of detect_sound_event is 7.177917718887329.
+The time cost of wavfiles2text is 16.132951736450195.
+
+- beam=10.0
+- nj=2
+The time cost of run is 9.8859224319458.
+The time cost of detect_sound_event is 7.767862796783447.
+The time cost of wavfiles2text is 16.576327800750732.
+
+--> It will take about 35 seconds for a 1 minutes video to do audio content analysis
+    ASR used about 50% of the time, download and SED used about 1/4 of the time.
+

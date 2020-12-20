@@ -174,19 +174,19 @@ RUN set -ex; \
 
 # ------ Setup Kaldi Environment ------
 WORKDIR /opt/kaldi/egs/apiai_decode/s5/
-
 RUN ./download-model.sh 
-
-COPY src/kaldi_scripts/recognize-wavfiles.sh /opt/kaldi/egs/apiai_decode/s5/
-COPY src/kaldi_scripts/recognize-wavfiles-online.sh /opt/kaldi/egs/apiai_decode/s5/
-
-RUN mkdir -p /opt/kaldi/egs/apiai_decode/s5/exp/api.ai-model/conf/
-COPY src/kaldi_scripts/online.conf /opt/kaldi/egs/apiai_decode/s5/exp/api.ai-model/conf/
 
 # ------ Setup Python Environment ------
 COPY requirements.txt /opt/
 WORKDIR /opt
 RUN pip3 install -r requirements.txt
+
+# ------ Copy Files -------
+COPY src/kaldi_scripts/recognize-wavfiles.sh /opt/kaldi/egs/apiai_decode/s5/
+COPY src/kaldi_scripts/recognize-wavfiles-online.sh /opt/kaldi/egs/apiai_decode/s5/
+
+RUN mkdir -p /opt/kaldi/egs/apiai_decode/s5/exp/api.ai-model/conf/
+COPY src/kaldi_scripts/online.conf /opt/kaldi/egs/apiai_decode/s5/exp/api.ai-model/conf/
 
 COPY src /opt/src
 RUN mkdir /opt/src/data
