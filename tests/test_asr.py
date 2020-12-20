@@ -14,3 +14,6 @@ def test_asr():
     assert status == 0
     print(text_dict)
     print("ASR testing complete.")
+
+if __name__ == "__main__":
+    test_asr()

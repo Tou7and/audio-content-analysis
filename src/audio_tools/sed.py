@@ -3,8 +3,10 @@ import numpy as np
 import pandas as pd
 import librosa
 from panns_inference import AudioTagging, SoundEventDetection, labels
+from time_cost import time_cost
 
 class SoundEventDetectionX(SoundEventDetection):
+    @time_cost
     def detect_sound_event(self, audio_path, n_dominate=5, threshold=0.2):
         """Save sound event detection result as CSV. 
 

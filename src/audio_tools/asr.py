@@ -4,6 +4,7 @@ import sys
 import subprocess
 from shutil import rmtree
 from common import ASR_WORK_DIR, CORPUS_DIR
+from time_cost import time_cost
 
 def create_corpus_dir(corpus_dir, list_wavfiles):
     """ Create Corpus Directory """
@@ -45,6 +46,7 @@ def create_corpus_dir(corpus_dir, list_wavfiles):
     except Exception as err:
         raise RuntimeError(err)
 
+@time_cost
 def wav2text(wavfile):
     results = subprocess.run(["./recognize-wav.sh", wavfile],
             stdout=subprocess.PIPE, cwd=ASR_WORK_DIR)
@@ -60,6 +62,7 @@ def wav2text(wavfile):
         text = "[{}]".format(results.stderr)
     return status, text
 
+@time_cost
 def wavfiles2text(list_wavfiles):
     """ Transcribe the given list of wavfiles.
     Args:

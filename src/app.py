@@ -15,7 +15,8 @@ from common import TMP_DIR, TEMPLATE_DIR
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'psychopass'
 
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+logging.basicConfig(stream=sys.stdout, level=logging.INFO, format=FORMAT)
 logger = logging.getLogger(__name__)
 # mail_handler = SMTPHandler(
 #     mailhost='0.0.0.0',

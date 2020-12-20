@@ -4,6 +4,7 @@ import sys
 import youtube_dl
 from common import TMP_DIR
 from media_tools.format_trans import decode_as_wavfile
+from time_cost import time_cost
 
 WAV_OPTS = {
     'verbose': 1,
@@ -45,7 +46,7 @@ MP4_OPTS = {
 }
 
 class YoutubeDownloader:
-    """ A Youtue downloader """
+    """ A Youtube downloader """
     def __init__(self, url, storage_dir=TMP_DIR, session_id="default", dst_format="mp4", dst_filename="default"):
         self.format = dst_format
         self.url = url
@@ -78,6 +79,7 @@ class YoutubeDownloader:
         except Exception as error:
             raise RuntimeError(error)
 
+    @time_cost
     def run(self):
         """ Download video from channel and convert to WAV format.
 

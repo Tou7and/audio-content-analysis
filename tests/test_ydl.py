@@ -14,3 +14,6 @@ def test_ydl():
 
     assert os.path.exists(CWD+"/default/beat_it.wav") == True
     print("YDL testting compete.")
+
+if __name__ == "__main__":
+    test_ydl()
