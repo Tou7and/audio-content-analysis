@@ -4,8 +4,11 @@ import sys
 import subprocess
 from shutil import rmtree
 from glob import glob
+from opencc import OpenCC
 from common import ASR_WORK_DIR, CORPUS_DIR
 from time_cost import time_cost
+
+Converter = OpenCC('s2t')
 
 def create_corpus_dir(corpus_dir, list_wavfiles):
     """ Create Corpus Directory """
@@ -69,7 +72,7 @@ def collect_logs(lang="en"):
     Returns:
         lines (list): list of string.
     """
-    if lang == "cn":
+    if lang in ["cn", "tw"]:
         log_files = glob(os.path.join(ASR_WORK_DIR, "exp/multi_cn_chain_sp_online/decode/log/decode.*.log"))
     else:
         log_files = glob(os.path.join(ASR_WORK_DIR, "exp/api.ai-model/decode/log/decode.*.log"))
@@ -97,7 +100,7 @@ def wavfiles2text(list_wavfiles, n_job=2, beam=10.0, lang="en"):
     if len(list_wavfiles) < 4:
         n_job = 1
 
-    if lang == "cn":
+    if lang in ["cn", "tw"]:
         cmd = "./recognize-wavfiles-online-cn.sh"
     else:
         cmd = "./recognize-wavfiles-online.sh"
@@ -120,4 +123,6 @@ def wavfiles2text(list_wavfiles, n_job=2, beam=10.0, lang="en"):
             key = asr_content[0]
             if key in text_dict:
                 text_dict[key] = " ".join(asr_content[1:])
+                if lang == "tw":
+                    text_dict[key] = Converter.convert(text_dict[key])
     return status, text_dict

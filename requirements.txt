@@ -11,3 +11,4 @@ numba==0.48
 librosa==0.6.3
 torch==1.7.0
 torchlibrosa==0.0.5
+opencc-python-reimplemented
