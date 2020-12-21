@@ -18,25 +18,6 @@ app.config['SECRET_KEY'] = 'psychopass'
 FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format=FORMAT)
 logger = logging.getLogger(__name__)
-# mail_handler = SMTPHandler(
-#     mailhost='0.0.0.0',
-#     fromaddr='audio-content-analysis@example.com',
-#     toaddrs=['houj0411@gmail.com'],
-#     subject='Application Error'
-# )
-# mail_handler.setLevel(logging.ERROR)
-# mail_handler.setFormatter(logging.Formatter(
-#     '[%(asctime)s] %(levelname)s in %(module)s: %(message)s'
-# ))
-# file_handler = FileHandler('log.txt')
-# file_handler.setLevel(logging.DEBUG)
-# stream_handler = StreamHandler()
-# 
-# app.logger.removeHandler(default_handler)
-# if not app.debug:
-#     app.logger.addHandler(mail_handler)
-# app.logger.addHandler(file_handler)
-# app.logger.addHandler(stream_handler)
 
 @app.route("/")
 def index():
@@ -76,9 +57,9 @@ def return_file():
     if session["purpose"] == "analyse":
         logger.info("---------------- Start analysing Video --------------------")
         try:
-            kata = session["kata"]
+            language = session["language"]
             results_html = os.path.join(TEMPLATE_DIR, session["id"]+".html")
-            status_of_analysis, error_description = run_analysis(results["audio"], results_html)
+            status_of_analysis, error_description = run_analysis(results["audio"], results_html, asr_lang=language)
             if status_of_analysis != 0:
                 return "<h1> Fail to analyse audio content: {}</h1>".format(error_description)
             return render_template(session["id"]+".html")
@@ -124,11 +105,12 @@ def analyse_youtube():
     title_text = "Get Video/Audio Analysis"
     if request.method == "POST":
         session["url"] = request.form.get('url')
-        session["kata"] = request.form.get('kata')
+        # session["kata"] = request.form.get('kata')
+        session["language"] = request.form.get('language')
         logger.info("------------------------------------------------")
         logger.info("------- Receive Session Data From User: -------")
         logger.info("URL : {}".format(session["url"]))
-        logger.info("KATA : {}".format(session["kata"]))
+        logger.info("LANGUAGE : {}".format(session["language"]))
         session["purpose"] = "analyse"
         session["id"] = str(uuid4())
         session["format"] = "wav"

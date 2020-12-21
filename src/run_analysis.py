@@ -21,7 +21,7 @@ def postprocess_asrtext(text):
     text = text.replace("\n", "")
     return text 
 
-def run_analysis(wav_path, html_path, segment_method="sed"):
+def run_analysis(wav_path, html_path, segment_method="sed", asr_lang="en"):
     """ Given a wavfile, run analysis and write the results to a HTML file.
     Args:
         wav_path (str): path of wavfile
@@ -58,7 +58,7 @@ def run_analysis(wav_path, html_path, segment_method="sed"):
 
     try:
         logger.info("---------- Doing ASR --------------")
-        status, text_dict = wavfiles2text(list_wavpath)
+        status, text_dict = wavfiles2text(list_wavpath, lang=asr_lang)
     except Exception as error:
         return 2, "Fail when doing ASR: {}".format(error)
 

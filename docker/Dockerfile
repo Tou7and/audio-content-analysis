@@ -182,8 +182,16 @@ WORKDIR /opt
 RUN pip3 install -r requirements.txt
 
 # ------ Copy Files -------
+WORKDIR /opt/kaldi/egs/apiai_decode/s5
+COPY data/0011_multi_cn_chain_sp_online_v2.tar.gz /opt/kaldi/egs/apiai_decode/s5/
+RUN tar -zxf 0011_multi_cn_chain_sp_online_v2.tar.gz
+RUN mv multi_cn_chain_sp_online /opt/kaldi/egs/apiai_decode/s5/exp/
+COPY src/kaldi_scripts/multi_cn/online.conf /opt/kaldi/egs/apiai_decode/s5/exp/multi_cn_chain_sp_online/conf/
+COPY src/kaldi_scripts/multi_cn/ivector_extractor.conf /opt/kaldi/egs/apiai_decode/s5/exp/multi_cn_chain_sp_online/conf/
+
 COPY src/kaldi_scripts/recognize-wavfiles.sh /opt/kaldi/egs/apiai_decode/s5/
 COPY src/kaldi_scripts/recognize-wavfiles-online.sh /opt/kaldi/egs/apiai_decode/s5/
+COPY src/kaldi_scripts/recognize-wavfiles-online-cn.sh /opt/kaldi/egs/apiai_decode/s5/
 
 RUN mkdir -p /opt/kaldi/egs/apiai_decode/s5/exp/api.ai-model/conf/
 COPY src/kaldi_scripts/online.conf /opt/kaldi/egs/apiai_decode/s5/exp/api.ai-model/conf/

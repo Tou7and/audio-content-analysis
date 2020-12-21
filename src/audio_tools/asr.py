@@ -63,13 +63,17 @@ def wav2text(wavfile):
         text = "[{}]".format(results.stderr)
     return status, text
 
-def collect_logs():
+def collect_logs(lang="en"):
     """ Collect logs that contain ASR results from decode.x.log.
 
     Returns:
         lines (list): list of string.
     """
-    log_files = glob(os.path.join(ASR_WORK_DIR, "exp/api.ai-model/decode/log/decode.*.log"))
+    if lang == "cn":
+        log_files = glob(os.path.join(ASR_WORK_DIR, "exp/multi_cn_chain_sp_online/decode/log/decode.*.log"))
+    else:
+        log_files = glob(os.path.join(ASR_WORK_DIR, "exp/api.ai-model/decode/log/decode.*.log"))
+
     logs = []
     for log_file in log_files:
         with open(log_file, "r") as reader:
@@ -78,10 +82,13 @@ def collect_logs():
     return logs
 
 @time_cost
-def wavfiles2text(list_wavfiles, n_job=2, beam=10.0):
+def wavfiles2text(list_wavfiles, n_job=2, beam=10.0, lang="en"):
     """ Transcribe the given list of wavfiles.
     Args:
         list_wavfiles (list): list of WAV path.
+        n_job (int): number of job for kaldi to run in parallel
+        beam (int): beam size for decoding
+        lang (str): to specify which ASR model to use
 
     Returns:
         status (int): 0 if success.
@@ -90,9 +97,15 @@ def wavfiles2text(list_wavfiles, n_job=2, beam=10.0):
     if len(list_wavfiles) < 4:
         n_job = 1
 
+    if lang == "cn":
+        cmd = "./recognize-wavfiles-online-cn.sh"
+    else:
+        cmd = "./recognize-wavfiles-online.sh"
+
     text_dict = {}
     create_corpus_dir(CORPUS_DIR, list_wavfiles)
-    results = subprocess.run(["./recognize-wavfiles-online.sh", str(n_job), str(beam)],
+
+    results = subprocess.run([cmd, str(n_job), str(beam)],
             stdout=subprocess.PIPE, cwd=ASR_WORK_DIR)
     status = results.returncode
 
@@ -101,7 +114,7 @@ def wavfiles2text(list_wavfiles, n_job=2, beam=10.0):
         text_dict[wav_id] = ""
 
     if status == 0:
-        lines = collect_logs()
+        lines = collect_logs(lang=lang)
         for line in lines:
             asr_content = line.split(" ")
             key = asr_content[0]
