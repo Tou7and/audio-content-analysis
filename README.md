@@ -14,6 +14,11 @@ A Flask application for analysing audio content on Youtube.
   - `Cnn14_DecisionLevelMax.pth` : <https://zenodo.org/record/3987831/files/Cnn14_DecisionLevelMax_mAP%3D0.385.pth?download=1>
   - `multi_cn_chain_sp_online` : <https://kaldi-asr.org/models/m11>
 
+## Demo
+<http://ec2-100-27-10-68.compute-1.amazonaws.com:8888/>
+
+使用的方案僅有 2G 的記憶體，因此處理超過 2 分鐘的影片會OOM，正在尋找(不用加錢的)解決方案。
+
 ## Files
 ```
 ├── docker  :  Dockefiles
