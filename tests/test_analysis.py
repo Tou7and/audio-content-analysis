@@ -2,8 +2,11 @@ import os
 import sys
 CWD = os.getcwd()
 sys.path.append(CWD+"/src/")
-from run_analysis import run_analysis
-
+# from run_analysis import run_analysis
+from common 
+from run_analysis import AudioAnalyer
+from common import SED_MODEL, DEEPSPEECH_CN, DEEPSPEECH_EN
+ANALYSER = AudioAnalyer(SED_MODEL, DEEPSPEECH_EN, DEEPSPEECH_CN)
 AUDIO = CWD + "/tests/1272-128104-0000.wav" 
 HTML = CWD + "/tests/1272-128104-0000.html" 
 

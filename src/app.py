@@ -9,8 +9,8 @@ from flask import Flask, render_template, request, redirect, flash, url_for, sen
 from flask.logging import default_handler
 from download_youtube import YoutubeDownloader
 from media_tools.format_trans import segment
-from run_analysis import run_analysis
-from common import TMP_DIR, TEMPLATE_DIR
+from run_analysis import AudioAnalyser
+from common import TMP_DIR, TEMPLATE_DIR, SED_MODEL, DEEPSPEECH_CN, DEEPSPEECH_EN
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'psychopass'
@@ -18,6 +18,8 @@ app.config['SECRET_KEY'] = 'psychopass'
 FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format=FORMAT)
 logger = logging.getLogger(__name__)
+
+audio_analyser = AudioAnalyser(SED_MODEL, DEEPSPEECH_EN, DEEPSPEECH_CN)
 
 @app.route("/")
 def index():
@@ -59,7 +61,8 @@ def return_file():
         try:
             language = session["language"]
             results_html = os.path.join(TEMPLATE_DIR, session["id"]+".html")
-            status_of_analysis, error_description = run_analysis(results["audio"], results_html, asr_lang=language)
+            # status_of_analysis, error_description = run_analysis(results["audio"], results_html, asr_lang=language)
+            status_of_analysis, error_description = audio_analyser.analyse_long_audio(results["audio"], results_html, language=language)
             if status_of_analysis != 0:
                 return "<h1> Fail to analyse audio content: {}</h1>".format(error_description)
             return render_template(session["id"]+".html")
