@@ -2,201 +2,166 @@
 import logging
 import os
 import wave
+import threading
+import queue
+from timeit import default_timer as timer
 import numpy as np
 import pandas as pd
-from timeit import default_timer as timer
 from opencc import OpenCC
 from audio_tools.vad import wav2segments
-# from audio_tools.asr import wavfiles2text
-from audio_tools.deepspeech_asr import Model
+from audio_tools.deepspeech_asr import Model, convert_samplerate
 from audio_tools.sed import SoundEventDetectionX
 from media_tools.format_trans import segment
-from common import TMP_DIR, SED_MODEL
+from common import TMP_DIR
 
 logger = logging.getLogger(__name__)
 
 class AudioAnalyser:
-    def __init__(self, sed_path:str, asr_en:dict, asr_cn:dict):
+    """ Current pipeline: Long Audio --> SED --> ASR --> Report """
+    def __init__(self, sed_path:str, asr_en:dict, asr_cn:dict, asr_nj=8):
         """ Initialize all models needed for audio analysis.
+
         Args:
             sed_path (str): path of SED model
             asr_en (dict): contain model and scorer of deepspeech
             asr_cn (dict): contain model and scorer of deepspeech
         """
         self.sed = SoundEventDetectionX(checkpoint_path=sed_path, device='cpu')
-
         self.asr_en = Model(asr_en["model"])
         self.asr_en.enableExternalScorer(asr_en["scorer"])
         self.asr_cn = Model(asr_cn["model"])
         self.asr_cn.enableExternalScorer(asr_cn["scorer"])
-
+        self.asr_nj = asr_nj
         self.converter = OpenCC('s2t')
 
-    def exec_sed(self, audio_path):
+    def exec_sed(self, audio_path:str):
+        """ Given a WAVE file, return SED results using a model trained with AudioSet.
+            AudioSet: <https://research.google.com/audioset/>
+
+        Returns:
+            event_timestamps (list):
+                each item is a dict with following keys - label, start, stop, wavfile
+        """
         event_timestamps = self.sed.detect_sound_event(audio_path)
-        list_wavpath = []
-        for timestamp in event_timestamps:
-            if "eech" in timestamp["label"]:
-                segment_path = os.path.join(TMP_DIR, "chunk-{}.wav".format(str(timestamp["id"]).zfill(4)))
-                segment(audio_path, out_filepath=segment_path, start=timestamp["start"], end=timestamp["stop"])
-                list_wavpath.append(segment_path)
-                timestamp["wavfile"] = segment_path
-        return event_timestamps, list_wavpath
 
-    def exec_vad(self, audio_path):
+        for event in event_timestamps:
+            if "eech" in event["label"]:
+                filename = "chunk-{}.wav".format(str(event["id"]).zfill(4))
+                filepath = os.path.join(TMP_DIR, filename)
+                segment(audio_path, out_filepath=filepath, start=event["start"], end=event["stop"])
+                event["wavfile"] = filepath
+            else:
+                event["wavfile"] = "NULL"
+
+        return event_timestamps
+
+    def exec_vad(self, audio_path: str):
+        """ Given a WAVE file, return SED results using a model trained with AudioSet.
+            AudioSet: <https://research.google.com/audioset/>
+
+        Returns:
+            event_timestamps (list):
+                each item is a dict with following keys - label, start, stop, wavfile
+        """
         list_timestamp, list_wavpath = wav2segments(audio_path, outputdir=TMP_DIR)
-        return list_timestamp, list_wavpath
 
-    def exec_asr_en(self, audio_path):
-        desired_sample_rate = self.asr_en.sampleRate()
+        for ind, timestamp in enumerate(list_timestamp):
+            timestamp["wavfile"] = list_wavpath[ind]
+
+        return list_timestamp
+
+    def exec_asr(self, audio_path: str, language="en", verbose=0):
+        """ Given a WAVE file, return ASR results using an English model.
+
+        Returns:
+            infer_text (str)
+        """
+        if language == "en":
+            desired_sample_rate = self.asr_en.sampleRate()
+        else:
+            desired_sample_rate = self.asr_cn.sampleRate()
 
         fin = wave.open(audio_path, 'rb')
         fs_orig = fin.getframerate()
         if fs_orig != desired_sample_rate:
-            fs_new, audio = convert_samplerate(audio, desired_sample_rate)
+            _, audio = convert_samplerate(audio_path, desired_sample_rate)
         else:
             audio = np.frombuffer(fin.readframes(fin.getnframes()), np.int16)
         audio_length = fin.getnframes() * (1/fs_orig)
         fin.close()
-        infer_text = self.asr_en.stt(audio)
-        # print('Inference took %0.3fs for %0.3fs audio file.' % (inference_end, audio_length), file=sys.stderr)
-        return infer_text
 
-    def exec_asr_cn(self, audio_path):
-        desired_sample_rate = self.asr_cn.sampleRate()
+        inference_start = timer()
 
-        fin = wave.open(audio_path, 'rb')
-        fs_orig = fin.getframerate()
-        if fs_orig != desired_sample_rate:
-            fs_new, audio = convert_samplerate(audio, desired_sample_rate)
+        if language == "en":
+            infer_text = self.asr_en.stt(audio)
         else:
-            audio = np.frombuffer(fin.readframes(fin.getnframes()), np.int16)
-        audio_length = fin.getnframes() * (1/fs_orig)
-        fin.close()
-        infer_text = self.asr_cn.stt(audio)
-        # print('Inference took %0.3fs for %0.3fs audio file.' % (inference_end, audio_length), file=sys.stderr)
+            infer_text = self.asr_cn.stt(audio)
+            if language == "tw":
+                infer_text = self.converter.convert(infer_text)
+
+        inference_end = timer() - inference_start
+        if verbose > 0:
+            logger.info('ASR took %s sec for %s sec audio.', inference_end, audio_length)
+            logger.info('%s : %s', audio_path, infer_text)
         return infer_text
 
-    def analyse_long_audio(self, audio_path, html_path, use_seg=True, language='en'):
+    def analyse_long_audio(self, audio_path, html_path, use_sed=True, language='en'):
         """ Analyse long audio.
 
         Returns:
             status (int): 0 = Success, 1 = SED Error, 2 = ASR Error
             detail (str)
         """
-        try:
-            content_list = []
 
+        try:
             logger.info("Excecuting SED ...")
             start_sed = timer()
-            if use_seg:
-                list_timestamp, list_wavpath = self.exec_sed(audio_path)
+            if use_sed:
+                list_timestamp = self.exec_sed(audio_path)
             else:
-                list_timestamp, list_wavpath = self.exec_vad(audio_path)
+                list_timestamp = self.exec_vad(audio_path)
             time_cost_sed = timer() - start_sed
-            logger.info("SED done, cost {} seconds.".format(time_cost_sed))
+            logger.info("SED done, cost %s seconds.", time_cost_sed)
         except Exception as error:
             return 1, error
+
+        def asr_worker(asr_q, result_list, lang):
+            """ Attach ASR results to the events, and append the events to the list. """
+            while asr_q.empty() is False:
+                event = asr_q.get()
+
+                if os.path.exists(event["wavfile"]):
+                    event["text"] = self.exec_asr(event["wavfile"], language=lang, verbose=2)
+                else:
+                    event["text"] = "---"*3
+                result_list.append(event)
+                asr_q.task_done()
+
+        the_asr_q = queue.Queue()
+        the_content_list = []
+        for event in list_timestamp:
+            the_asr_q.put(event)
 
         try:
             logger.info("Excecuting ASR ...")
             start_asr = timer()
-            for timestamp in list_timestamp:
-                if "eech" in timestamp["label"]:
-                    if language == "en":
-                        asr_content = self.exec_asr_en(timestamp['wavfile'])
-                    else:
-                        asr_content = self.exec_asr_cn(timestamp['wavfile'])
-                        if language == "tw":
-                            asr_content = self.converter.convert(asr_content)
-                    if use_seg:
-                        content_list.append([timestamp["id"], timestamp["start"], timestamp["stop"], timestamp["label"], asr_content])
-                    else:
-                        content_list.append([timestamp["id"], timestamp["start"], timestamp["stop"], "Voice", asr_content])
+
+            for _ in range(self.asr_nj):
+                threading.Thread(
+                    target=asr_worker,
+                    daemon=True,
+                    args=(the_asr_q, the_content_list, language)
+                ).start()
+
+            the_asr_q.join()
+
             time_cost_asr = timer() - start_asr
-            logger.info("ASR done, cost {} seconds.".format(time_cost_asr))
+            logger.info("ASR done, cost %s seconds.", time_cost_asr)
         except Exception as error:
             return 2, error
 
-        dataframe = pd.DataFrame(content_list)
-        dataframe.columns = ["id", "start", "stop", "event", "text"]
-        dataframe = dataframe.sort_values(by=["start"])
+        dataframe = pd.DataFrame(the_content_list)
+        dataframe = dataframe[['id', 'label', 'start', 'stop', 'text']]
+        dataframe = dataframe.sort_values(by=["id"])
         dataframe.to_html(html_path, index=None, justify="left")
         return 0, "Success"
-
-def postprocess_asrtext(text):
-    """ Post-process on ASR text for better visuals
-    Args:
-        text (str)
-    Returns:
-        text (str)
-    """
-    text = text.lower()
-    text = text.replace("\n", "")
-    return text 
-
-def run_analysis(wav_path, html_path, segment_method="sed", asr_lang="en"):
-    """ Given a wavfile, run analysis and write the results to a HTML file.
-    Args:
-        wav_path (str): path of wavfile
-        html_path (str): path of HTML file
-        segment_method (str): 
-            "sed" for using sound event detector to segment wavfile. 
-            Otherwise use webrtcvad.
-
-    Returns:
-        status (int): status code
-            0 = success
-            1 = VAD fail
-            2 = ASR Fail
-            3 = Fail to make HTML
-    """
-    try:
-        logger.info("---------- Doing SED --------------")
-        if segment_method == "sed":
-            sed = SoundEventDetectionX(checkpoint_path=SED_MODEL, device='cpu')
-            event_timestamps = sed.detect_sound_event(wav_path)
-            list_wavpath = []
-            for timestamp in event_timestamps:
-                if "eech" in timestamp["label"]:
-                    segment_path = os.path.join(TMP_DIR, "chunk-{}.wav".format(str(timestamp["id"]).zfill(4)))
-                    segment(wav_path, out_filepath=segment_path, start=timestamp["start"], end=timestamp["stop"])
-                    list_wavpath.append(segment_path)
-                    timestamp["wavfile"] = segment_path
-        else:
-            logger.info("---------- Doing VAD --------------")
-            list_timestamp, list_wavpath = wav2segments(wav_path, outputdir=TMP_DIR)
-            # print("Number of segments: {}".format(len(list_wavpath)))
-    except Exception as error:
-        return 1, "Fail when doing VAD/SED: {}".format(error)
-
-    try:
-        logger.info("---------- Doing ASR --------------")
-        status, text_dict = wavfiles2text(list_wavpath, lang=asr_lang)
-    except Exception as error:
-        return 2, "Fail when doing ASR: {}".format(error)
-
-    try:
-        content_list = []
-        if segment_method == "sed":
-            for timestamp in event_timestamps:
-                if "wavfile" in timestamp:
-                    wav_id = os.path.basename(timestamp["wavfile"]).replace(".wav", "")
-                    asr_content = postprocess_asrtext(text_dict[wav_id])
-                else:
-                    asr_content = "---"
-                content_list.append([timestamp["id"], timestamp["start"], timestamp["stop"], timestamp["label"], asr_content])
-            dataframe = pd.DataFrame(content_list)
-            dataframe.columns = ["id", "start", "stop", "event", "text"]
-            dataframe = dataframe.sort_values(by=["start"])
-        else:
-            for ind, timestamp in enumerate(list_timestamp):
-                wav_id = os.path.basename(list_wavpath[ind]).replace(".wav", "")
-                content_list.append([ind, timestamp["start"], timestamp["stop"], postprocess_asrtext(text_dict[wav_id])])
-            dataframe = pd.DataFrame(content_list)
-            dataframe.columns = ["id", "start", "stop", "text"]
-        dataframe.to_html(html_path, index=None, justify="left")
-    except Exception as error:
-        return 3, "Fail when generating table: {}".format(error)
-
-    return 0, "Success"
