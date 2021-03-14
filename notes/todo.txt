@@ -1,11 +1,15 @@
 TODO:
-- Keep improving speed
-- A database for recording user requests
-- Trace computation and time cost (also record in DB?)
-- logger for tracing status and errors
+- improve speed
+
+- record requests history
+  - trace computation and time cost
+  - trace status and errors
+
 - Scene classification: make hashtags?
-- Sentient analysis?
-- Mandarin ASR
+
+- NLP
+  - Sentient analysis? 
+  - Summary of contents?
 
 Issues:
 - The system will go down when analysing audio if the duration is too long (about 3G for 10 min video)
@@ -15,3 +19,4 @@ Issues:
 DONE:
 - Replace current VAD with a SED (sound event detector)
 - ASR scripts multiprocessing
+

@@ -37,3 +37,10 @@ The time cost of wavfiles2text is 16.576327800750732.
 --> It will take about 35 seconds for a 1 minutes video to do audio content analysis
     ASR used about 50% of the time, download and SED used about 1/4 of the time.
 
+v1.8:
+(ASR change to deepspeech)
+- url=https://www.youtube.com/watch?v=Rk2qzbZt9p0
+- n_thread=8
+The time cost of run is 9.61016845703125.
+The time cost of detect_sound_event is 8.912643432617188.
+ASR done, cost 37.51637599999958 seconds.
